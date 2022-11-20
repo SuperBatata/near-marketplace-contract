@@ -18,6 +18,8 @@
 
 
 import { Product , listProducts } from "./model";
+import {ContractPromiseBatch , context} from "near-sdk-as";
+
 
 
 export function setProduct (product: Product): void{
@@ -36,4 +38,20 @@ export function getProduct(id: string): Product | null {
 
 export function getAllProducts(): Product[] | null {
     return listProducts.values();
+}
+
+
+export function buyProduct(productId:string):void {
+    
+    const product = getProduct(productId);
+    if (product == null){
+        throw new Error(`Product with ${productId} does not exist`);
+    }
+    if (product.price.toString != context.attachedDeposit.toString){
+        throw new Error(`Deposit ${context.attachedDeposit} does not match product price ${product.price}`);
+    }
+
+    ContractPromiseBatch.create(product.owner).transfer(context.attachedDeposit);
+    product.incrementSoldAmount();
+    listProducts.set(productId, product);
 }
